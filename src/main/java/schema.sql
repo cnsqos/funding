@@ -103,12 +103,11 @@ CREATE TABLE project_reviews (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   processed_at TIMESTAMP,
 
-                                 CONSTRAINT fk_pr_requester
-                                     FOREIGN KEY (requester_id) REFERENCES users(id),
+  CONSTRAINT fk_pr_project
+    FOREIGN KEY (project_id) REFERENCES projects(id),
 
-                                 CONSTRAINT fk_pr_admin
-                                     FOREIGN KEY (admin_id) REFERENCES users(id)
-);
+  CONSTRAINT fk_pr_requester
+    FOREIGN KEY (requester_id) REFERENCES users(id),
 
   CONSTRAINT fk_pr_admin
     FOREIGN KEY (admin_id) REFERENCES users(id)
@@ -130,9 +129,8 @@ CREATE TABLE project_status_logs (
   changed_by_id BIGINT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-                                     CONSTRAINT fk_psl_user
-                                         FOREIGN KEY (changed_by_id) REFERENCES users(id)
-);
+  CONSTRAINT fk_psl_project
+    FOREIGN KEY (project_id) REFERENCES projects(id),
 
   CONSTRAINT fk_psl_user
     FOREIGN KEY (changed_by_id) REFERENCES users(id)
@@ -156,9 +154,8 @@ CREATE TABLE donations (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-                           CONSTRAINT fk_donations_project
-                               FOREIGN KEY (project_id) REFERENCES projects(id)
-);
+  CONSTRAINT fk_donations_user
+    FOREIGN KEY (user_id) REFERENCES users(id),
 
   CONSTRAINT fk_donations_project
     FOREIGN KEY (project_id) REFERENCES projects(id)
@@ -175,10 +172,10 @@ CREATE TABLE likes (
   project_id BIGINT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-                       PRIMARY KEY (user_id, project_id),
+  PRIMARY KEY (user_id, project_id),
 
-                       CONSTRAINT fk_likes_user
-                           FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT fk_likes_user
+    FOREIGN KEY (user_id) REFERENCES users(id),
 
   CONSTRAINT fk_likes_project
     FOREIGN KEY (project_id) REFERENCES projects(id)
@@ -192,10 +189,10 @@ CREATE TABLE follows (
   following_id BIGINT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-                         PRIMARY KEY (follower_id, following_id),
+  PRIMARY KEY (follower_id, following_id),
 
-                         CONSTRAINT fk_follows_follower
-                             FOREIGN KEY (follower_id) REFERENCES users(id),
+  CONSTRAINT fk_follows_follower
+    FOREIGN KEY (follower_id) REFERENCES users(id),
 
   CONSTRAINT fk_follows_following
     FOREIGN KEY (following_id) REFERENCES users(id)
@@ -216,13 +213,13 @@ CREATE TABLE tags (
 -- 11) PROJECT_TAGS
 -- =========================
 CREATE TABLE project_tags (
-                              project_id BIGINT NOT NULL,
-                              tag_id BIGINT NOT NULL,
+  project_id BIGINT NOT NULL,
+  tag_id BIGINT NOT NULL,
 
-                              PRIMARY KEY (project_id, tag_id),
+  PRIMARY KEY (project_id, tag_id),
 
-                              CONSTRAINT fk_pt_project
-                                  FOREIGN KEY (project_id) REFERENCES projects(id),
+  CONSTRAINT fk_pt_project
+    FOREIGN KEY (project_id) REFERENCES projects(id),
 
   CONSTRAINT fk_pt_tag
     FOREIGN KEY (tag_id) REFERENCES tags(id)
@@ -232,10 +229,10 @@ CREATE TABLE project_tags (
 -- 12) PROJECT IMAGES
 -- =========================
 CREATE TABLE project_images (
-                                id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                project_id BIGINT NOT NULL,
-                                image_url VARCHAR(500) NOT NULL,
-                                is_thumbnail BOOLEAN NOT NULL DEFAULT FALSE,
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  project_id BIGINT NOT NULL,
+  image_url VARCHAR(500) NOT NULL,
+  is_thumbnail BOOLEAN NOT NULL DEFAULT FALSE,
 
   CONSTRAINT fk_pi_project
     FOREIGN KEY (project_id) REFERENCES projects(id)
@@ -289,12 +286,11 @@ CREATE TABLE project_delete_requests (
   requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   approved_at TIMESTAMP,
 
-                                         CONSTRAINT fk_pdr_requester
-                                             FOREIGN KEY (requester_id) REFERENCES users(id),
+  CONSTRAINT fk_pdr_project
+    FOREIGN KEY (project_id) REFERENCES projects(id),
 
-                                         CONSTRAINT fk_pdr_admin
-                                             FOREIGN KEY (admin_id) REFERENCES users(id)
-);
+  CONSTRAINT fk_pdr_requester
+    FOREIGN KEY (requester_id) REFERENCES users(id),
 
   CONSTRAINT fk_pdr_admin
     FOREIGN KEY (admin_id) REFERENCES users(id)
@@ -319,10 +315,10 @@ CREATE TABLE daily_statistics (
 -- 17) PROJECT DAILY VIEWS
 -- =========================
 CREATE TABLE project_daily_views (
-                                     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                     project_id BIGINT NOT NULL,
-                                     view_date DATE NOT NULL,
-                                     view_count INT NOT NULL DEFAULT 0,
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  project_id BIGINT NOT NULL,
+  view_date DATE NOT NULL,
+  view_count INT NOT NULL DEFAULT 0,
 
   CONSTRAINT uq_pdv_project_date UNIQUE (project_id, view_date),
 
