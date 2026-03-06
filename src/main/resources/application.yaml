@@ -2,6 +2,82 @@ server:
   port: 8080
 
 spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/funding?serverTimezone=Asia/Seoul&characterEncoding=utf8
+    username: root
+    password: root1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
+
+  sql:
+    init:
+      mode: never
+
+jwt:
+  secret: "CHANGE_ME_TO_LONG_RANDOM_SECRET_MIN_32CHARS"
+  access-token-exp-minutes: 60
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+	
+	
+#  server:
+#  port: 8080
+
+#  spring:
+#  datasource:
+#  url: jdbc:mysql://localhost:3306/funding?serverTimezone=Asia/Seoul&characterEncoding=utf8
+#  username: root
+#  password: root1234
+#  driver-class-name: com.mysql.cj.jdbc.Driver
+
+#  jpa:
+#   hibernate:
+#   ddl-auto: none
+#   open-in-view: false
+#   properties:
+#   hibernate:
+#   format_sql: true
+#   show_sql: true
+#   jdbc:
+#   time_zone: Asia/Seoul
+
+# sql:
+# init:
+# mode: always
+# schema-locations: classpath:schema.sql
+
+#jwt:
+# secret: "CHANGE_ME_TO_LONG_RANDOM_SECRET_MIN_32CHARS"
+# access-token-exp-minutes: 60
+
+#ogging:
+# level:
+#  org.springframework.web: DEBUG
+#  org.springframework.security: DEBUG
+#  org.hibernate.SQL: DEBUG
+#  org.hibernate.orm.jdbc.bind: TRACE
+
+
+
+#server:
+#  port: 8080
+
+#spring:
 
   # ──────────────────────────────────────────────────────────────
   # [해빈님에게]
@@ -14,11 +90,11 @@ spring:
   # ──────────────────────────────────────────────────────────────
 
   # ✅ 현재 사용 중 (H2 인메모리 - 로컬 테스트용)
-  datasource:
-    url: jdbc:h2:mem:funding;MODE=MySQL;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+#  datasource:
+#    url: jdbc:h2:mem:funding;MODE=MySQL;DB_CLOSE_DELAY=-1
+#    driver-class-name: org.h2.Driver
+#    username: sa
+#    password:
 
   # ⛔ MySQL 연결 시 아래 주석 해제 (H2 블록은 주석 처리할 것)
   # datasource:
@@ -26,29 +102,36 @@ spring:
   #   username: root
   #   password: root1234
   #   driver-class-name: com.mysql.cj.jdbc.Driver
+  #  sql:
+  #    init:
+  #      mode: never
 
-  h2:
-    console:
-      enabled: true   # http://localhost:8080/h2-console 에서 DB 직접 확인 가능 (MySQL 전환 시 삭제)
+  #  jpa:
+  #    hibernate:
+  #      ddl-auto: update
 
-  jpa:
-    hibernate:
-      ddl-auto: create-drop   # H2용 - MySQL 전환 시 none 으로 변경할 것
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
-        jdbc:
-          time_zone: Asia/Seoul
+#  h2:
+#    console:
+#      enabled: true   # http://localhost:8080/h2-console 에서 DB 직접 확인 가능 (MySQL 전환 시 삭제)
 
-jwt:
-  secret: "CHANGE_ME_TO_LONG_RANDOM_SECRET_MIN_32CHARS"
-  access-token-exp-minutes: 60
+#  jpa:
+#    hibernate:
+#      ddl-auto: create-drop   # H2용 - MySQL 전환 시 none 으로 변경할 것
+#    open-in-view: false
+#    properties:
+#      hibernate:
+#        format_sql: true
+#        show_sql: true
+#        jdbc:
+#          time_zone: Asia/Seoul
 
-logging:
-  level:
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE
+#jwt:
+#  secret: "CHANGE_ME_TO_LONG_RANDOM_SECRET_MIN_32CHARS"
+#  access-token-exp-minutes: 60
+
+#logging:
+#  level:
+#    org.springframework.web: DEBUG
+#    org.springframework.security: DEBUG
+#    org.hibernate.SQL: DEBUG
+#    org.hibernate.orm.jdbc.bind: TRACE
