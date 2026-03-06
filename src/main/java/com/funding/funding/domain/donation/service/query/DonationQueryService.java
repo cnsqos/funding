@@ -4,6 +4,8 @@ import com.funding.funding.domain.donation.dto.ProjectDonationResponse;
 import com.funding.funding.domain.donation.dto.UserDonationResponse;
 import com.funding.funding.domain.donation.dto.AdminDonationResponse;
 import com.funding.funding.domain.donation.repository.DonationRepository;
+import com.funding.funding.domain.project.repository.ProjectRepository;
+import com.funding.funding.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-
+import org.springframework.security.access.AccessDeniedException;
 /*
  * 후원 조회 전용 서비스.
  *
@@ -31,7 +33,8 @@ public class DonationQueryService {
 
     // 후원 데이터 접근 레이어
     private final DonationRepository donationRepository;
-
+    private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
     /*
      * 특정 프로젝트의 후원 목록 조회.
      *
@@ -40,12 +43,33 @@ public class DonationQueryService {
      * - 프로젝트 작성자에게 필요한 정보만 노출한다
      *   (금액, 생성일, 상태).
      */
-    public List<ProjectDonationResponse> findProjectDonations(Long projectId) {
 
+
+    public List<ProjectDonationResponse> findProjectDonations(Long projectId, Long userId) {
+
+        // 1. 프로젝트 조회
+        var project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IllegalArgumentException("Project not found"));
+
+        // 2. 로그인 사용자 조회
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // 3. 프로젝트 작성자인지 확인
+        boolean isOwner = project.getOwner().getId().equals(userId);
+
+        // 4. 관리자 여부 확인
+        boolean isAdmin = user.getRole().name().equals("ADMIN");
+
+        // 5. 권한 체크
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        // 6. 후원 목록 조회
         return donationRepository
                 .findByProjectIdOrderByCreatedAtDesc(projectId)
                 .stream()
-                // 엔티티 → DTO 변환 (정보 노출 범위 제한)
                 .map(d -> new ProjectDonationResponse(
                         d.getAmount(),
                         d.getCreatedAt(),
