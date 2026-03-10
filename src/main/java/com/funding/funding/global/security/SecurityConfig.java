@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,9 +33,9 @@ public class SecurityConfig {
 
         http
                 .cors(Customizer.withDefaults()) // ← 이 줄 추가
-                .csrf(csrf -> csrf.disable())
-                .httpBasic(b -> b.disable())
-                .formLogin(f -> f.disable())
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -48,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/{userId}/followers/count").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/{userId}/following/count").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwt), UsernamePasswordAuthenticationFilter.class);

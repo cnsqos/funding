@@ -1,37 +1,75 @@
 package com.funding.funding.domain.user.controller;
 
+import com.funding.funding.domain.project.dto.ProjectSummaryResponse;
+import com.funding.funding.domain.user.dto.UserProfileResponse;
+import com.funding.funding.domain.user.dto.UserProfileUpdateRequest;
+import com.funding.funding.domain.user.service.user.UserService;
+import com.funding.funding.global.exception.ApiException;
 import com.funding.funding.global.response.ApiResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    // GET /api/users/me — 내 정보 조회
     @GetMapping("/me")
-    public ApiResponse<Object> me(Authentication auth) {
+    public ApiResponse<UserProfileResponse> me(Authentication auth) {
+        Long userId = extractUserId(auth);
+        return ApiResponse.ok(UserProfileResponse.from(userService.getMe(userId)));
+    }
 
+    // PUT /api/users/me — 프로필 수정 (닉네임, 프로필 이미지)
+    @PutMapping("/me")
+    public ApiResponse<UserProfileResponse> updateProfile(
+            Authentication auth,
+            @Valid @RequestBody UserProfileUpdateRequest req
+    ) {
+        Long userId = extractUserId(auth);
+        return ApiResponse.ok(UserProfileResponse.from(userService.updateProfile(userId, req)));
+    }
+
+    // GET /api/users/me/projects — 내 프로젝트 목록
+    @GetMapping("/me/projects")
+    public ApiResponse<List<ProjectSummaryResponse>> myProjects(Authentication auth) {
+        Long userId = extractUserId(auth);
+        List<ProjectSummaryResponse> result = userService.getMyProjects(userId)
+                .stream()
+                .map(ProjectSummaryResponse::from)
+                .toList();
+        return ApiResponse.ok(result);
+    }
+
+    // GET /api/users/me/likes — 찜 목록
+    @GetMapping("/me/likes")
+    public ApiResponse<List<ProjectSummaryResponse>> myLikes(Authentication auth) {
+        Long userId = extractUserId(auth);
+        List<ProjectSummaryResponse> result = userService.getLikedProjects(userId)
+                .stream()
+                .map(ProjectSummaryResponse::from)
+                .toList();
+        return ApiResponse.ok(result);
+    }
+
+    // ────────────────────────────────────────────────
+    private Long extractUserId(Authentication auth) {
         if (auth == null || auth.getPrincipal() == null) {
-            return ApiResponse.fail("UNAUTHORIZED");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다");
         }
-
         Object principal = auth.getPrincipal();
-
-        // ✅ JwtAuthenticationFilter에서 principal을 Long(userId)로 넣었을 때
-        if (principal instanceof Long userId) {
-            return ApiResponse.ok(userId);
-        }
-
-        // ✅ 혹시 String으로 들어오는 경우(예: "1")
-        if (principal instanceof String s) {
-            try {
-                return ApiResponse.ok(Long.valueOf(s));
-            } catch (Exception e) {
-                return ApiResponse.ok(principal);
-            }
-        }
-
-        // ✅ 그 외(UserDetails 등)면 일단 그대로 보여줘서 원인 파악 가능하게
-        return ApiResponse.ok(principal);
+        if (principal instanceof Long id) return id;
+        if (principal instanceof String s) return Long.valueOf(s);
+        throw new ApiException(HttpStatus.UNAUTHORIZED, "인증 정보가 올바르지 않습니다");
     }
 }

@@ -51,5 +51,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             Pageable pageable
     );
 
+    // 내 프로젝트 목록 (마이페이지)
+    List<Project> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
 
+    // 통계용 - 특정 상태 프로젝트 수
+    long countByStatus(ProjectStatus status);
 }

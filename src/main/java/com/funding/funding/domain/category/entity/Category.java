@@ -1,12 +1,16 @@
 package com.funding.funding.domain.category.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 
+@Getter
 @Entity
 @Table(name = "categories")
 public class Category {
 
+    // Jackson 응답을 위해 getter 필요 (없으면 data가 비거나 오류 날 수 있음)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,7 +23,12 @@ public class Category {
     private LocalDateTime createdAt;
 
     public Category() {
-        // ✅ JPA 기본 생성자(권장: protected)
+        // JPA 기본 생성자(권장: protected)
+    }
+
+    // 이름으로 생성
+    public Category(String name) {
+        this.name = name;
     }
 
     @PrePersist
@@ -27,8 +36,9 @@ public class Category {
         this.createdAt = LocalDateTime.now();
     }
 
-    // ✅ Jackson 응답을 위해 getter 필요 (없으면 data가 비거나 오류 날 수 있음)
-    public Long getId() { return id; }
-    public String getName() { return name; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    // 이름 수정
+    public void updateName(String name) {
+        this.name = name;
+    }
+
 }

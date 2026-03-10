@@ -23,9 +23,25 @@ spring:
     init:
       mode: never
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: yeon02204@gmail.com     #  정연 Gmail 주소
+    password: pvsq ugwi wwhy jmzv      # Gmail 앱 funding 비밀번호 (계정 비밀번호 X)
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
 jwt:
   secret: "CHANGE_ME_TO_LONG_RANDOM_SECRET_MIN_32CHARS"
   access-token-exp-minutes: 60
+
+app:
+  frontend-url: http://localhost:3000  #  배포 시 실제 URL로 변경
 
 logging:
   level:

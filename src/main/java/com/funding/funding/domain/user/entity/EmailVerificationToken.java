@@ -4,30 +4,30 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /*
-  비밀번호 재설정 토큰 엔티티
-  - UUID 기반 토큰을 이메일로 발송
-  - 30분 내 사용해야 함
-  - 1회 사용 후 usedAt 세팅, 재사용 불가
+  이메일 인증 코드 엔티티
+  - 회원가입 시 6자리 숫자 코드를 이메일로 발송
+  - 5분 내 인증 완료해야 함
+  - 인증 완료 시 usedAt 세팅, User.emailVerified = true
  */
 @Entity
-@Table(name = "password_reset_tokens")
-public class PasswordResetToken {
+@Table(name = "email_verification_tokens")
+public class EmailVerificationToken {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(nullable = false, length = 255)
+    private String email;
 
-    @Column(nullable = false, unique = true, length = 255)
-    private String token;
+    @Column(nullable = false, length = 6)
+    private String code;           // 6자리 숫자 코드
 
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt;
 
     @Column(name = "used_at")
-    private LocalDateTime usedAt;
+    private LocalDateTime usedAt;  // 인증 완료 시각 (null = 미인증)
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -37,13 +37,13 @@ public class PasswordResetToken {
         this.createdAt = LocalDateTime.now();
     }
 
-    public PasswordResetToken() {}
+    public EmailVerificationToken() {}
 
     // ── 팩토리 메서드 ──────────────────────────────────
-    public static PasswordResetToken create(User user, String token, int expireMinutes) {
-        PasswordResetToken t = new PasswordResetToken();
-        t.user      = user;
-        t.token     = token;
+    public static EmailVerificationToken create(String email, String code, int expireMinutes) {
+        EmailVerificationToken t = new EmailVerificationToken();
+        t.email     = email;
+        t.code      = code;
         t.expiredAt = LocalDateTime.now().plusMinutes(expireMinutes);
         return t;
     }
@@ -62,7 +62,9 @@ public class PasswordResetToken {
     }
 
     // ── Getter ────────────────────────────────────────
-    public Long getId()    { return id; }
-    public User getUser()  { return user; }
-    public String getToken() { return token; }
+    public Long getId()              { return id; }
+    public String getEmail()         { return email; }
+    public String getCode()          { return code; }
+    public LocalDateTime getExpiredAt() { return expiredAt; }
+    public boolean isVerified()      { return usedAt != null; }
 }
