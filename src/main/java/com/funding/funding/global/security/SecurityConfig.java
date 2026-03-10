@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/projects").permitAll() // 테스트용 추가
+                        .requestMatchers(HttpMethod.POST, "/api/projects/swagger-test").permitAll() // 테스트용 추가
                         .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/{userId}/followers/count").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/{userId}/following/count").permitAll()

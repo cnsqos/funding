@@ -36,6 +36,11 @@ spring:
             enable: true
             required: true
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 100MB
+
 jwt:
   secret: "CHANGE_ME_TO_LONG_RANDOM_SECRET_MIN_32CHARS"
   access-token-exp-minutes: 60

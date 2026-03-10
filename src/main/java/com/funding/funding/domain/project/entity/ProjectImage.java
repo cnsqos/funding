@@ -18,6 +18,13 @@ public class ProjectImage {
 
     @Column(name = "is_thumbnail", nullable = false)
     private boolean thumbnail;
+    
+    protected ProjectImage() {
+    }
 
-    public ProjectImage() {}
+    public ProjectImage(Project project, String imageUrl, boolean thumbnail) { // 생성자 추가
+        this.project = project; 
+        this.imageUrl = imageUrl;
+        this.thumbnail = thumbnail;
+    }
 }
