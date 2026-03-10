@@ -15,5 +15,5 @@ public class ProjectCreateRequest { // 사용자가 보낸 JSON 데이터를 스
     private LocalDateTime startAt;
     // 펀딩 종료 시간
     private LocalDateTime deadline; // 새로 추가
-
+    private Integer thumbnailIndex; // 대표 이미지 번호 (0,1,2번 중 하나)
 }
