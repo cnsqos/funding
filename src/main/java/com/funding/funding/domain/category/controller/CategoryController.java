@@ -1,5 +1,6 @@
 package com.funding.funding.domain.category.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.funding.funding.domain.category.dto.CategoryRequest;
 import com.funding.funding.domain.category.entity.Category;
 import com.funding.funding.domain.category.service.CategoryService;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "카테고리", description = "카테고리 목록 및 관리자 CRUD")
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {

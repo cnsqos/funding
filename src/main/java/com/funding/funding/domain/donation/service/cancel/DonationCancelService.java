@@ -3,22 +3,14 @@ package com.funding.funding.domain.donation.service.cancel;
 import com.funding.funding.domain.donation.entity.Donation;
 import com.funding.funding.domain.donation.repository.DonationRepository;
 import com.funding.funding.domain.donation.status.DonationStatus;
+import com.funding.funding.global.exception.ApiException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-/*
- * [역할]
- * 사용자 취소(개인 환불) 전용 서비스
- * - 실제 돈이 오가는것이 아니라서 취소 상태만 가진다.
- * - 결제 완료 상태를 되돌리는 도메인 상태 변경 로직이다.
- *
- * [책임]
- * SUCCESS → CANCEL 상태 전이
- * 24시간 이내만 허용
- */
 @Service
 @RequiredArgsConstructor
 public class DonationCancelService {
@@ -26,23 +18,24 @@ public class DonationCancelService {
     private final DonationRepository donationRepository;
 
     @Transactional
-    public void cancel(Long donationId) {
+    public void cancel(Long donationId, Long requestUserId) {
 
-        // 1. 후원 조회
         Donation donation = donationRepository.findById(donationId)
-                .orElseThrow(() -> new IllegalArgumentException("Donation not found"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "후원 내역을 찾을 수 없습니다."));
 
-        // 2. 상태 전이 가능 여부 확인 (SUCCESS → CANCEL)
+        // 본인 후원인지 검증
+        if (!donation.getUser().getId().equals(requestUserId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "본인의 후원만 취소할 수 있습니다.");
+        }
+
         if (!donation.getStatus().canTransitionTo(DonationStatus.CANCEL)) {
-            throw new IllegalStateException("Invalid state transition");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "취소할 수 없는 상태의 후원입니다.");
         }
 
-        // 3. 취소 가능 시간 검증
         if (LocalDateTime.now().isAfter(donation.getCancelDeadline())) {
-            throw new IllegalStateException("Cancel deadline exceeded");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "취소 가능 기한이 지났습니다.");
         }
 
-        // 4. 상태 변경
         donation.setStatus(DonationStatus.CANCEL);
     }
 }

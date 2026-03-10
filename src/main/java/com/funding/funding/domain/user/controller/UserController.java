@@ -1,5 +1,6 @@
 package com.funding.funding.domain.user.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.funding.funding.domain.project.dto.ProjectSummaryResponse;
 import com.funding.funding.domain.user.dto.UserProfileResponse;
 import com.funding.funding.domain.user.dto.UserProfileUpdateRequest;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "마이페이지", description = "내 정보 조회, 프로필 수정, 내 프로젝트, 찜 목록")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {

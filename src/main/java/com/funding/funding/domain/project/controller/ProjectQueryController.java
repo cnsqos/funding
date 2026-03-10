@@ -1,5 +1,6 @@
 package com.funding.funding.domain.project.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.funding.funding.domain.project.dto.ProjectDetailResponse;
 import com.funding.funding.domain.project.dto.ProjectSummaryResponse;
 import com.funding.funding.domain.project.entity.ProjectStatus;
@@ -11,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 // 프로젝트 조회 API
+@Tag(name = "프로젝트 조회", description = "프로젝트 목록, 상세 조회")
 @RestController
 @RequestMapping("/api/projects")
 public class ProjectQueryController {

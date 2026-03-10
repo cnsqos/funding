@@ -1,5 +1,6 @@
 package com.funding.funding.domain.statistics.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.funding.funding.domain.statistics.dto.StatsResponse;
 import com.funding.funding.domain.statistics.service.StatisticsService;
 import com.funding.funding.global.response.ApiResponse;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "관리자 - 통계", description = "사이트 통계 대시보드")
 @RestController
 @RequestMapping("/api/admin/stats")
 @PreAuthorize("hasRole('ADMIN')")
