@@ -4,6 +4,8 @@ import com.funding.funding.domain.project.entity.Project;
 import com.funding.funding.domain.project.entity.ProjectStatus;
 import com.funding.funding.domain.project.exception.InvalidProjectStatusTransitionException;
 import com.funding.funding.domain.project.repository.ProjectRepository;
+import com.funding.funding.domain.user.entity.User;
+import com.funding.funding.global.exception.ApiException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,8 +15,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-// ProjectLifecycleService 단위 테스트
-// - Repository를 mock으로 교체하여 DB 없이 서비스 로직만 검증
 class ProjectLifecycleServiceTest {
 
     private ProjectRepository projectRepository;
@@ -32,27 +32,33 @@ class ProjectLifecycleServiceTest {
 
     @Test
     void 심사요청_성공() {
-        // given: DRAFT 상태 프로젝트
-        Project project = draftProject(1L);
+        // given: DRAFT 상태, owner=10L, 요청자=10L (본인)
+        Project project = draftProject(1L, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
-        // when
         lifecycleService.requestReview(1L, 10L);
 
-        // then
         assertEquals(ProjectStatus.REVIEW_REQUESTED, project.getStatus());
         verify(projectRepository).findById(1L);
     }
 
     @Test
     void 심사요청_FUNDING상태면_예외() {
-        // given: FUNDING 상태 (심사 요청 불가)
-        Project project = projectWithStatus(1L, ProjectStatus.FUNDING);
+        Project project = projectWithStatus(1L, ProjectStatus.FUNDING, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
-        // when & then
         assertThrows(InvalidProjectStatusTransitionException.class,
                 () -> lifecycleService.requestReview(1L, 10L));
+    }
+
+    @Test
+    void 심사요청_본인프로젝트_아니면_예외() {
+        // owner=10L, 요청자=99L (다른 사람)
+        Project project = draftProject(1L, 10L);
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+
+        assertThrows(ApiException.class,
+                () -> lifecycleService.requestReview(1L, 99L)); // ✅ 403
     }
 
     @Test
@@ -63,12 +69,12 @@ class ProjectLifecycleServiceTest {
     }
 
     // ────────────────────────────────────────
-    // approve / reject
+    // approve / reject (관리자 — owner 검증 없음)
     // ────────────────────────────────────────
 
     @Test
     void 심사승인_성공() {
-        Project project = projectWithStatus(1L, ProjectStatus.REVIEW_REQUESTED);
+        Project project = projectWithStatus(1L, ProjectStatus.REVIEW_REQUESTED, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
         lifecycleService.approve(1L, 99L);
@@ -78,7 +84,7 @@ class ProjectLifecycleServiceTest {
 
     @Test
     void 심사반려_성공() {
-        Project project = projectWithStatus(1L, ProjectStatus.REVIEW_REQUESTED);
+        Project project = projectWithStatus(1L, ProjectStatus.REVIEW_REQUESTED, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
         lifecycleService.reject(1L, 99L);
@@ -88,7 +94,7 @@ class ProjectLifecycleServiceTest {
 
     @Test
     void 심사승인_DRAFT상태면_예외() {
-        Project project = draftProject(1L);
+        Project project = draftProject(1L, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
         assertThrows(InvalidProjectStatusTransitionException.class,
@@ -96,12 +102,12 @@ class ProjectLifecycleServiceTest {
     }
 
     // ────────────────────────────────────────
-    // stop / resume
+    // stop / resume (관리자 — owner 검증 없음)
     // ────────────────────────────────────────
 
     @Test
     void 강제중단_성공() {
-        Project project = projectWithStatus(1L, ProjectStatus.FUNDING);
+        Project project = projectWithStatus(1L, ProjectStatus.FUNDING, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
         lifecycleService.stop(1L, 99L);
@@ -111,7 +117,7 @@ class ProjectLifecycleServiceTest {
 
     @Test
     void 재개_성공() {
-        Project project = projectWithStatus(1L, ProjectStatus.STOPPED);
+        Project project = projectWithStatus(1L, ProjectStatus.STOPPED, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
         lifecycleService.resume(1L, 99L);
@@ -121,7 +127,7 @@ class ProjectLifecycleServiceTest {
 
     @Test
     void 강제중단_APPROVED상태면_예외() {
-        Project project = projectWithStatus(1L, ProjectStatus.APPROVED);
+        Project project = projectWithStatus(1L, ProjectStatus.APPROVED, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
         assertThrows(InvalidProjectStatusTransitionException.class,
@@ -134,7 +140,8 @@ class ProjectLifecycleServiceTest {
 
     @Test
     void 삭제요청_성공() {
-        Project project = projectWithStatus(1L, ProjectStatus.FUNDING);
+        // owner=10L, 요청자=10L (본인)
+        Project project = projectWithStatus(1L, ProjectStatus.FUNDING, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
         lifecycleService.requestDelete(1L, 10L);
@@ -143,8 +150,18 @@ class ProjectLifecycleServiceTest {
     }
 
     @Test
+    void 삭제요청_본인프로젝트_아니면_예외() {
+        // owner=10L, 요청자=99L (다른 사람)
+        Project project = projectWithStatus(1L, ProjectStatus.FUNDING, 10L);
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
+
+        assertThrows(ApiException.class,
+                () -> lifecycleService.requestDelete(1L, 99L)); // ✅ 403
+    }
+
+    @Test
     void 삭제완료_성공() {
-        Project project = projectWithStatus(1L, ProjectStatus.DELETE_REQUESTED);
+        Project project = projectWithStatus(1L, ProjectStatus.DELETE_REQUESTED, 10L);
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
         lifecycleService.completeDelete(1L);
@@ -156,14 +173,19 @@ class ProjectLifecycleServiceTest {
     // 헬퍼
     // ────────────────────────────────────────
 
-    private Project draftProject(Long id) {
-        return projectWithStatus(id, ProjectStatus.DRAFT);
+    private Project draftProject(Long id, Long ownerId) {
+        return projectWithStatus(id, ProjectStatus.DRAFT, ownerId);
     }
 
-    private Project projectWithStatus(Long id, ProjectStatus status) {
+    private Project projectWithStatus(Long id, ProjectStatus status, Long ownerId) {
+        // ✅ owner mock — project.getOwner().getId() 가 ownerId 반환
+        User mockOwner = mock(User.class);
+        when(mockOwner.getId()).thenReturn(ownerId);
+
         Project p = new Project();
         setField(p, "id", id);
         setField(p, "status", status);
+        setField(p, "owner", mockOwner); // ✅ owner 세팅
         return p;
     }
 
