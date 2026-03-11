@@ -16,10 +16,14 @@ public class ProjectSummaryResponse {
     public Long goalAmount;
     public Long currentAmount;
     public int progressPercent;    // ✅ 추가 — 달성률 (currentAmount / goalAmount * 100)
+    public long likeCount;         // ✅ 추가 — 좋아요 수 (인기순 정렬 시 표시용)
     public LocalDateTime startAt;
     public LocalDateTime deadline;
 
-    public static ProjectSummaryResponse from(Project p) {
+    // ✅ likeCount를 외부에서 주입받는 방식
+    //    Project 엔티티에 likeCount 컬럼이 없기 때문에
+    //    서비스에서 LikeRepository로 조회한 값을 여기에 넣어줌
+    public static ProjectSummaryResponse from(Project p, long likeCount) {
         ProjectSummaryResponse r = new ProjectSummaryResponse();
         r.id            = p.getId();
         r.title         = p.getTitle();
@@ -30,8 +34,15 @@ public class ProjectSummaryResponse {
         r.progressPercent = (p.getGoalAmount() != null && p.getGoalAmount() > 0)
                 ? (int) (p.getCurrentAmount() * 100L / p.getGoalAmount())
                 : 0;
+        r.likeCount  = likeCount;
         r.startAt    = p.getStartAt();
         r.deadline   = p.getDeadline();
         return r;
+    }
+
+    // 기존 from(Project) 호환용 — likeCount 0으로 처리
+    // 마이페이지 찜 목록 등 likeCount가 필요 없는 곳에서 사용
+    public static ProjectSummaryResponse from(Project p) {
+        return from(p, 0L);
     }
 }

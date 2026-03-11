@@ -28,13 +28,18 @@ public class ProjectDetailResponse {
     public Long currentAmount;  // 현재 후원 금액
     public int progressPercent; // 목표 대비 달성률 (%)
 
+    // ✅ 추가 — 좋아요 수
+    //    Project 엔티티에 like_count 컬럼이 없어서
+    //    서비스에서 LikeRepository로 조회한 값을 주입받음
+    public long likeCount;
+
     // 시간 정보
     public LocalDateTime startAt;
     public LocalDateTime deadline;
     public LocalDateTime createdAt;
 
-    // Entity → DTO 변환 메서드
-    public static ProjectDetailResponse from(Project p) {
+    // ✅ likeCount를 외부에서 주입받는 팩토리 메서드
+    public static ProjectDetailResponse from(Project p, long likeCount) {
 
         ProjectDetailResponse r = new ProjectDetailResponse();
 
@@ -63,6 +68,9 @@ public class ProjectDetailResponse {
                 ? (int) (p.getCurrentAmount() * 100L / p.getGoalAmount())
                 : 0;
 
+        // 좋아요 수
+        r.likeCount = likeCount;
+
         // 시간 정보
         r.startAt = p.getStartAt();
         r.deadline = p.getDeadline();
@@ -70,4 +78,9 @@ public class ProjectDetailResponse {
 
         return r;
     }
-}
+
+    // 기존 from(Project) 호환용 — likeCount 0으로 처리
+    public static ProjectDetailResponse from(Project p) {
+        return from(p, 0L);
+    }
+}d
