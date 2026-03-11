@@ -3,6 +3,7 @@ package com.funding.funding.global.security;
 import com.funding.funding.domain.user.oauth.CustomOAuth2UserService;
 import com.funding.funding.domain.user.oauth.OAuth2AuthenticationFailureHandler;
 import com.funding.funding.domain.user.oauth.OAuth2AuthenticationSuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -43,6 +44,19 @@ public class SecurityConfig {
                 .httpBasic(b -> b.disable())
                 .formLogin(f -> f.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // ✅ 인증 실패 시 401 반환 설정
+                // 기존: exceptionHandling 설정 없음
+                //   → Spring Security 기본값: 미인증 요청을 /login으로 302 리다이렉트
+                // 수정: authenticationEntryPoint 직접 지정
+                //   → 토큰 없는 요청에 즉시 401 Unauthorized 반환
+                //   → JWT 방식에서는 리다이렉트가 의미 없으므로 반드시 설정해야 함
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
+                        )
+                )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
@@ -59,7 +73,6 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/projects").permitAll() // 테스트용 추가
-                        .requestMatchers(HttpMethod.POST, "/api/projects/swagger-test").permitAll() // 테스트용 추가
                         .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/{userId}/followers/count").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/{userId}/following/count").permitAll()

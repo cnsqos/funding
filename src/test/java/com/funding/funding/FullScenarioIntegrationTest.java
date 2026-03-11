@@ -134,20 +134,26 @@ class FullScenarioIntegrationTest {
 
     @Test
     void 시나리오3_토큰없이_심사요청_401() throws Exception {
+        // ✅ isForbidden() → isUnauthorized() 수정
+        // JwtAuthenticationFilter가 토큰 없는 요청을 401로 처리
+        // Spring Security 기본 동작은 403이지만
+        // JWT 필터에서 토큰을 검증하면서 먼저 401을 반환
         mockMvc.perform(post("/api/projects/1/review-request"))
-                .andExpect(status().isForbidden()); // 403 (Spring Security 기본값)
+                .andExpect(status().isUnauthorized()); // 401
     }
 
     @Test
     void 시나리오3_토큰없이_좋아요_401() throws Exception {
+        // ✅ isForbidden() → isUnauthorized() 수정
         mockMvc.perform(post("/api/projects/1/likes"))
-                .andExpect(status().isForbidden()); // 403
+                .andExpect(status().isUnauthorized()); // 401
     }
 
     @Test
     void 시나리오3_토큰없이_팔로우_401() throws Exception {
+        // ✅ isForbidden() → isUnauthorized() 수정
         mockMvc.perform(post("/api/users/1/follow"))
-                .andExpect(status().isForbidden()); // 403
+                .andExpect(status().isUnauthorized()); // 401
     }
 
     // ────────────────────────────────────────
