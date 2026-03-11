@@ -19,7 +19,14 @@ public class AuthDtos {
             @NotBlank String password
     ) {}
 
-    public record TokenRes(String accessToken) {}
+    public record TokenRes(
+            String accessToken,
+            String refreshToken
+    ) {}
+    
+    public record RefreshReq(
+    		@NotBlank String refreshToken
+    ) {}
 
     // ── 이메일 인증 ───────────────────────────────────
     /** 인증 코드 발송 요청 */
@@ -53,4 +60,6 @@ public class AuthDtos {
             @NotBlank String token,
             @NotBlank @Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다") String newPassword
     ) {}
+    
+
 }

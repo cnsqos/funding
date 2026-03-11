@@ -23,10 +23,21 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
                                         org.springframework.security.core.AuthenticationException exception)
             throws IOException, ServletException {
 
-        String message = exception.getMessage() == null ? "소셜 로그인에 실패했습니다." : exception.getMessage();
+        // 인증 실패 메시지 정리
+        String message = exception.getMessage() == null
+                ? "소셜 로그인에 실패했습니다."
+                : exception.getMessage();
 
+        // ─────────────────────────────────────────────
+        // 실패 메시지도 queryString 대신 fragment(#)로 전달
+        //
+        // 예:
+        // http://localhost:3000/oauth/failure#message=...
+        //
+        // 프론트에서는 window.location.hash 로 읽으면 됨
+        // ─────────────────────────────────────────────
         String redirectUrl = frontendUrl
-                + "/oauth/failure?message="
+                + "/oauth/failure#message="
                 + URLEncoder.encode(message, StandardCharsets.UTF_8);
 
         response.sendRedirect(redirectUrl);
