@@ -16,6 +16,7 @@ import java.util.List;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    // JWT 생성/검증/파싱 담당
     private final JwtTokenProvider jwt;
 
     public JwtAuthenticationFilter(JwtTokenProvider jwt) {
@@ -23,37 +24,50 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain chain)
             throws ServletException, IOException {
 
+        // Authorization: Bearer xxx 에서 토큰 추출
         String token = resolveToken(request);
 
         if (token != null) {
             try {
-                if (jwt.validate(token)) {
+                // 1) 토큰 서명/만료 검증
+                // 2) access token인지 확인
+                if (jwt.validate(token) && "access".equals(jwt.getType(token))) {
+
                     Long userId = jwt.getUserId(token);
                     String role = jwt.getRole(token);
 
+                    // 현재 프로젝트는 principal에 userId(Long)를 넣는 구조
                     var auth = new UsernamePasswordAuthenticationToken(
                             userId,
                             null,
                             List.of(new SimpleGrantedAuthority("ROLE_" + role))
                     );
+
+                    // SecurityContext에 인증 정보 저장
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             } catch (Exception ignored) {
-                // 토큰 문제면 인증 없이 통과(권한 필요한 API에서 401 처리됨)
+                // 토큰이 이상하면 인증 없이 그냥 다음 필터로 넘김
+                // 실제 보호된 API 접근 시 SecurityConfig의 인증 처리에서 401 응답
             }
         }
 
         chain.doFilter(request, response);
     }
 
+    // Authorization 헤더에서 Bearer 토큰 추출
     private String resolveToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
+
         if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
+
         return null;
     }
 }

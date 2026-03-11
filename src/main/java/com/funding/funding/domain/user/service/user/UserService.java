@@ -3,6 +3,7 @@ package com.funding.funding.domain.user.service.user;
 import com.funding.funding.domain.project.entity.Project;
 import com.funding.funding.domain.project.repository.LikeRepository;
 import com.funding.funding.domain.project.repository.ProjectRepository;
+import com.funding.funding.domain.user.dto.UserMeRes;
 import com.funding.funding.domain.user.dto.UserProfileUpdateRequest;
 import com.funding.funding.domain.user.entity.User;
 import com.funding.funding.domain.user.repository.UserRepository;
@@ -24,14 +25,17 @@ public class UserService {
     public UserService(UserRepository userRepository,
                        ProjectRepository projectRepository,
                        LikeRepository likeRepository) {
-        this.userRepository  = userRepository;
+        this.userRepository = userRepository;
         this.projectRepository = projectRepository;
-        this.likeRepository  = likeRepository;
+        this.likeRepository = likeRepository;
     }
 
     // ── 내 정보 조회 ──────────────────────────────────
-    public User getMe(Long userId) {
-        return findUser(userId);
+    // 기존에는 User 엔티티 자체를 반환했지만,
+    // 이제는 프론트에 필요한 값만 내려주기 위해 DTO로 변환해서 반환
+    public UserMeRes getMe(Long userId) {
+        User user = findUser(userId);
+        return UserMeRes.from(user);
     }
 
     // ── 프로필 수정 ───────────────────────────────────
@@ -64,9 +68,11 @@ public class UserService {
     @Transactional
     public void suspend(Long userId, String reason) {
         User user = findUser(userId);
+
         if (user.getRole().name().equals("ADMIN")) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "관리자 계정은 정지할 수 없습니다");
         }
+
         user.suspend(reason);
     }
 
