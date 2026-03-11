@@ -83,4 +83,4 @@ public class ProjectDetailResponse {
     public static ProjectDetailResponse from(Project p) {
         return from(p, 0L);
     }
-}d
+}

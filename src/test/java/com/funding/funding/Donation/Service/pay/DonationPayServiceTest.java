@@ -129,8 +129,11 @@ class DonationPayServiceTest {
     // ────────────────────────────────────────
 
     private User makeUser(Long id) {
-        User u = new User();
-        setField(u, "id", id);
+        // ✅ new User() → mock(User.class)
+        //    User() 기본 생성자가 protected라 테스트에서 직접 호출 불가
+        //    Mockito mock은 접근 제한 무시하고 객체 생성 가능
+        User u = mock(User.class);
+        when(u.getId()).thenReturn(id);
         return u;
     }
 
