@@ -60,9 +60,9 @@ public class ProjectQueryController {
       ✅ DELETED 상태면 404 반환 (서비스에서 처리)
      */
     @GetMapping("/{id}")
-    public ProjectDetailResponse getOne(@PathVariable Long id) {
+    public ProjectDetailResponse getOne(@PathVariable("id") Long id) {
         return ProjectDetailResponse.from(
-                queryService.getOne(id),
+                queryService.getOneWithViewCount(id),
                 queryService.getLikeCount(id)
         );
     }

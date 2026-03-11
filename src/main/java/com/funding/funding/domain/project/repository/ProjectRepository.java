@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
@@ -121,6 +122,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
                        ))
                 """
     )
+    
+    
     Page<Project> searchOrderByLikes(
             @Param("status")     ProjectStatus status,
             @Param("categoryId") Long categoryId,
@@ -128,4 +131,13 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             @Param("tagName")    String tagName,
             Pageable pageable
     );
+    
+    @Query("""
+    	    select p
+    	    from Project p
+    	    left join fetch p.category
+    	    left join fetch p.owner
+    	    where p.id = :id
+    	""")
+    	Optional<Project> findDetailById(@Param("id") Long id);
 }
