@@ -1,6 +1,7 @@
 package com.funding.funding.domain.project.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 @Entity
 @Table(name = "project_images")
@@ -13,9 +14,11 @@ public class ProjectImage {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
+    @Getter
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
 
+    @Getter
     @Column(name = "is_thumbnail", nullable = false)
     private boolean thumbnail;
     
@@ -27,4 +30,5 @@ public class ProjectImage {
         this.imageUrl = imageUrl;
         this.thumbnail = thumbnail;
     }
+
 }

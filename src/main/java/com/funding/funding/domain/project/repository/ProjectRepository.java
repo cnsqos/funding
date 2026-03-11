@@ -4,12 +4,14 @@ import com.funding.funding.domain.project.entity.Project;
 import com.funding.funding.domain.project.entity.ProjectStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
@@ -24,11 +26,15 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByStatusAndDeadlineLessThanEqual(ProjectStatus status, LocalDateTime now);
 
     // 내 프로젝트 목록 (마이페이지)
+    @EntityGraph(attributePaths = {"category", "owner"})
     List<Project> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
 
     // 통계용 - 특정 상태 프로젝트 수
     long countByStatus(ProjectStatus status);
 
+    // 추가
+    @EntityGraph(attributePaths = {"category", "owner"})
+    Optional<Project> findWithDetailsById(Long id);
     // ─────────────────────────────────────────────────────────────────
     // 프로젝트 검색 (최신순 / 마감순 등 일반 정렬)
     //

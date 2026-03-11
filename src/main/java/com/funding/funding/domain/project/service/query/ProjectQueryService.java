@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.repository.EntityGraph;
 
 // 실제 DB 조회 로직 담당(Repository 호출 담당)
 // 컨트롤러는 요청/응답만 하도록 얇게 유지
@@ -34,7 +35,7 @@ public class ProjectQueryService {
     public Project getOne(Long id) { // 특정 프로젝트 하나 조회, 요청이 들어오면 Controller가 이 메서드 호출
         // id로 프로젝트 조회
         // findById는 Optional 반환 → 값이 없으면 예외 발생
-        Project project = projectRepository.findById(id)
+        Project project = projectRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "프로젝트를 찾을 수 없습니다. id=" + id));
 
         // ✅ DELETED 상태면 존재하더라도 404 반환

@@ -19,6 +19,9 @@ public class ProjectSummaryResponse {
     public long likeCount;         // ✅ 추가 — 좋아요 수 (인기순 정렬 시 표시용)
     public LocalDateTime startAt;
     public LocalDateTime deadline;
+    public String ownerNickname;  // 추가
+    public String thumbnailUrl;   // 추가
+    public long backerCount;      // 추가 (후원자 수)
 
     // ✅ likeCount를 외부에서 주입받는 방식
     //    Project 엔티티에 likeCount 컬럼이 없기 때문에
@@ -37,6 +40,9 @@ public class ProjectSummaryResponse {
         r.likeCount  = likeCount;
         r.startAt    = p.getStartAt();
         r.deadline   = p.getDeadline();
+        r.ownerNickname = p.getOwner() != null ? p.getOwner().getNickname() : null;
+        r.thumbnailUrl  = null; // 이미지 저장 방식 확인 필요
+        r.backerCount   = 0L;   // 서비스에서 주입 필요
         return r;
     }
 
