@@ -60,7 +60,8 @@ public class SecurityConfig {
                 .formLogin(f -> f.disable())
 
                 // 서버 세션을 사용하지 않는 Stateless 구조
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+//              .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // 인증 안 된 사용자가 보호된 API 접근 시 401 응답 반환
                 .exceptionHandling(e -> e

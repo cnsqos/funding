@@ -192,13 +192,27 @@ public class AuthService {
             String nickname,
             String profileImage
     ) {
-        // 이미 같은 이메일로 로컬 회원 or 다른 소셜 회원이 존재하면 충돌 처리
-        if (userRepository.existsByEmail(email)) {
+        // 이미 같은 이메일의 회원이 존재하면 현재 정책상 충돌 처리
+        userRepository.findByEmail(email).ifPresent(existingUser -> {
+            if (existingUser.getProvider() == AuthProvider.LOCAL) {
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        "이미 일반회원으로 가입된 이메일입니다. 기존 이메일 로그인으로 로그인해주세요."
+                );
+            }
+
+            if (existingUser.getProvider() == provider) {
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        "이미 같은 소셜 계정 이메일로 가입된 회원입니다. 기존 방식으로 로그인해주세요."
+                );
+            }
+
             throw new ApiException(
                     HttpStatus.CONFLICT,
-                    "이미 일반회원 또는 다른 소셜 계정으로 가입된 이메일입니다. 기존 방식으로 로그인해주세요."
+                    "이미 다른 소셜 계정으로 가입된 이메일입니다. 기존 방식으로 로그인해주세요."
             );
-        }
+        });
 
         // 닉네임 중복 방지
         String finalNickname = makeUniqueNickname(nickname, provider);
