@@ -86,7 +86,7 @@ jwt:
   access-token-exp-minutes: 15
   refresh-token-exp-days: 7
 app:
-  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
 
 logging:
     level:

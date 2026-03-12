@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-    @Value("${app.frontend-url:http://localhost:3000}")
+    @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
     @Override
@@ -58,13 +58,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         // ─────────────────────────────────────────────
         // accessToken은 fragment(#)로 프론트에 전달
         //
-        // 왜 queryString(?token=...) 대신 fragment를 쓰나?
-        // - queryString은 서버 로그, 브라우저 기록, 리퍼러 등에 남을 수 있음
-        // - fragment(#...)는 브라우저가 클라이언트에서만 처리하고
-        //   일반적으로 서버로 전송되지 않음
-        //
         // 예:
-        // http://localhost:3000/oauth/success#accessToken=...
+        // http://localhost:5173/oauth/success#accessToken=...
         // ─────────────────────────────────────────────
         String redirectUrl = frontendUrl
                 + "/oauth/success#accessToken="
