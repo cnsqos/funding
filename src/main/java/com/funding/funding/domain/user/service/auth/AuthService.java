@@ -98,7 +98,7 @@ public class AuthService {
                 .orElseThrow(() ->
                         new ApiException(HttpStatus.UNAUTHORIZED,
                                 "이메일 또는 비밀번호가 올바르지 않습니다."));
-
+        
         // 비밀번호 검증
         if (user.getPassword() == null ||
                 !passwordEncoder.matches(req.password(), user.getPassword())) {

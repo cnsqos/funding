@@ -35,8 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null) {
             try {
                 // 1) 토큰 서명/만료 검증
-                // 2) access token인지 확인
-                if (jwt.validate(token) && "access".equals(jwt.getType(token))) {
+                // 2) access token인지 확인, && "access".equals(jwt.getType(token)) 잠시 주석
+                if ((jwt.validate(token)) && "access".equals(jwt.getType(token))){
 
                     Long userId = jwt.getUserId(token);
                     String role = jwt.getRole(token);

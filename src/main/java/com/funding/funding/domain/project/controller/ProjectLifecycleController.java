@@ -25,14 +25,14 @@ public class ProjectLifecycleController {
 
     // 심사 요청: DRAFT/REJECTED → REVIEW_REQUESTED (본인 프로젝트만)
     @PostMapping("/{id}/review-request")
-    public ApiResponse<Void> requestReview(@PathVariable Long id, Authentication auth) {
+    public ApiResponse<Void> requestReview(@PathVariable("id") Long id, Authentication auth) {
         lifecycleService.requestReview(id, extractUserId(auth));
         return ApiResponse.ok(null);
     }
 
     // 삭제 요청: FUNDING → DELETE_REQUESTED (본인 프로젝트만)
     @PostMapping("/{id}/delete-request")
-    public ApiResponse<Void> requestDelete(@PathVariable Long id, Authentication auth) {
+    public ApiResponse<Void> requestDelete(@PathVariable("id") Long id, Authentication auth) {
         lifecycleService.requestDelete(id, extractUserId(auth));
         return ApiResponse.ok(null);
     }
@@ -41,28 +41,28 @@ public class ProjectLifecycleController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/approve")
-    public ApiResponse<Void> approve(@PathVariable Long id, Authentication auth) {
+    public ApiResponse<Void> approve(@PathVariable("id") Long id, Authentication auth) {
         lifecycleService.approve(id, extractUserId(auth));
         return ApiResponse.ok(null);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/reject")
-    public ApiResponse<Void> reject(@PathVariable Long id, Authentication auth) {
+    public ApiResponse<Void> reject(@PathVariable("id") Long id, Authentication auth) {
         lifecycleService.reject(id, extractUserId(auth));
         return ApiResponse.ok(null);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/stop")
-    public ApiResponse<Void> stop(@PathVariable Long id, Authentication auth) {
+    public ApiResponse<Void> stop(@PathVariable("id") Long id, Authentication auth) {
         lifecycleService.stop(id, extractUserId(auth));
         return ApiResponse.ok(null);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/resume")
-    public ApiResponse<Void> resume(@PathVariable Long id, Authentication auth) {
+    public ApiResponse<Void> resume(@PathVariable("id") Long id, Authentication auth) {
         lifecycleService.resume(id, extractUserId(auth));
         return ApiResponse.ok(null);
     }
