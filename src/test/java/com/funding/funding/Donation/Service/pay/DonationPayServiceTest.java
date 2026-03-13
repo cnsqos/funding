@@ -148,6 +148,12 @@ class DonationPayServiceTest {
         Donation d = new Donation();
         setField(d, "id", id);
         d.setStatus(status);
+        setField(d, "amount", 5000L);
+        Project p = new Project();
+        setField(p, "id", 1L);
+        setField(p, "currentAmount", 0L);
+        setField(d, "project", p);
+
         return d;
     }
 

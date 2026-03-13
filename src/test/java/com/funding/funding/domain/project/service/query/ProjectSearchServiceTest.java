@@ -1,5 +1,6 @@
 package com.funding.funding.domain.project.service.query;
 
+import com.funding.funding.domain.project.dto.ProjectSummaryResponse;
 import com.funding.funding.domain.project.entity.Project;
 import com.funding.funding.domain.project.entity.ProjectStatus;
 import com.funding.funding.domain.project.repository.LikeRepository;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 // ProjectQueryService의 검색 로직 단위 테스트
@@ -23,17 +25,20 @@ class ProjectSearchServiceTest {
 
     private ProjectRepository projectRepository;
     private LikeRepository likeRepository;
+    private ProjectViewService projectViewService;
     private ProjectQueryService queryService;
 
     @BeforeEach
     void setUp() {
-        projectRepository = mock(ProjectRepository.class);
-        likeRepository    = mock(LikeRepository.class);
-        queryService = new ProjectQueryService(projectRepository, likeRepository);
+        projectRepository  = mock(ProjectRepository.class);
+        likeRepository     = mock(LikeRepository.class);
+        projectViewService = mock(ProjectViewService.class);
+        queryService = new ProjectQueryService(projectRepository, likeRepository, projectViewService);
 
-        // ✅ searchOrderByLikes mock 기본값 세팅
-        // when()이 없으면 Mockito는 null을 반환하고 서비스 내부에서 NPE 발생
-        // → verify()가 제대로 동작하지 않아서 테스트 실패
+        // ✅ likeRepository mock 기본값 — 서비스 내부에서 트랜잭션 안에 매핑 시 호출됨
+        when(likeRepository.countByIdProjectId(anyLong())).thenReturn(0L);
+
+        // ✅ searchOrderByLikes mock 기본값
         when(projectRepository.searchOrderByLikes(any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of()));
     }
@@ -45,8 +50,8 @@ class ProjectSearchServiceTest {
         when(projectRepository.search(null, null, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        // when
-        Page<Project> result = queryService.search(null, null, null, null, null, pageable);
+        // when — 반환 타입이 Page<ProjectSummaryResponse>로 변경됨
+        Page<ProjectSummaryResponse> result = queryService.search(null, null, null, null, null, pageable);
 
         // then
         assertNotNull(result);
@@ -60,7 +65,7 @@ class ProjectSearchServiceTest {
         when(projectRepository.search(ProjectStatus.FUNDING, null, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(p)));
 
-        Page<Project> result = queryService.search(ProjectStatus.FUNDING, null, null, null, null, pageable);
+        Page<ProjectSummaryResponse> result = queryService.search(ProjectStatus.FUNDING, null, null, null, null, pageable);
 
         assertEquals(1, result.getTotalElements());
     }
@@ -72,9 +77,9 @@ class ProjectSearchServiceTest {
         when(projectRepository.search(null, null, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        queryService.search(null, null, "   ", null, null, pageable); // 공백만 있는 keyword
+        queryService.search(null, null, "   ", null, null, pageable);
 
-        verify(projectRepository).search(null, null, null, null, pageable); // null로 전달되는지 검증
+        verify(projectRepository).search(null, null, null, null, pageable);
     }
 
     @Test
@@ -83,9 +88,9 @@ class ProjectSearchServiceTest {
         when(projectRepository.search(null, null, "카페", null, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        queryService.search(null, null, "  카페  ", null, null, pageable); // 공백 포함
+        queryService.search(null, null, "  카페  ", null, null, pageable);
 
-        verify(projectRepository).search(null, null, "카페", null, pageable); // trim 확인
+        verify(projectRepository).search(null, null, "카페", null, pageable);
     }
 
     @Test
@@ -95,7 +100,7 @@ class ProjectSearchServiceTest {
         when(projectRepository.search(null, null, null, "환경", pageable))
                 .thenReturn(new PageImpl<>(List.of(p)));
 
-        Page<Project> result = queryService.search(null, null, null, "환경", null, pageable);
+        Page<ProjectSummaryResponse> result = queryService.search(null, null, null, "환경", null, pageable);
 
         assertEquals(1, result.getTotalElements());
         verify(projectRepository).search(null, null, null, "환경", pageable);
@@ -107,21 +112,18 @@ class ProjectSearchServiceTest {
         when(projectRepository.search(null, null, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        queryService.search(null, null, null, "   ", null, pageable); // 공백 tagName
+        queryService.search(null, null, null, "   ", null, pageable);
 
-        verify(projectRepository).search(null, null, null, null, pageable); // null로 변환 확인
+        verify(projectRepository).search(null, null, null, null, pageable);
     }
 
     @Test
-    void sortBy가_popular이면_searchOrderByLikes_호출() {
-        // ✅ searchOrderByLikes mock은 @BeforeEach에서 세팅됨
+    void sortBy가_likes이면_searchOrderByLikes_호출() {
         Pageable pageable = PageRequest.of(0, 10);
 
         queryService.search(null, null, null, null, "likes", pageable);
 
-        // searchOrderByLikes가 호출되었는지 확인
         verify(projectRepository).searchOrderByLikes(null, null, null, null, PageRequest.of(0, 10));
-        // 일반 search는 호출되지 않아야 함
         verify(projectRepository, never()).search(any(), any(), any(), any(), any());
     }
 

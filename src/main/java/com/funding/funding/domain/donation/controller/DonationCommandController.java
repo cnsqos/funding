@@ -1,5 +1,6 @@
 package com.funding.funding.domain.donation.controller;
 
+import com.funding.funding.domain.donation.entity.Donation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.funding.funding.domain.donation.service.cancel.DonationCancelService;
 import com.funding.funding.domain.donation.service.pay.DonationPayService;
@@ -30,7 +31,13 @@ public class DonationCommandController {
             Authentication auth
     ) {
         Long userId = extractUserId(auth);
-        donationPayService.createDonation(userId, projectId, amount);
+
+        // 후원 생성
+        Donation donation = donationPayService.createDonation(userId, projectId, amount);
+
+        // 후원하면 바로 성공 처리
+        donationPayService.markSuccess(donation.getId());
+
         return ApiResponse.ok(null);
     }
 

@@ -88,6 +88,9 @@ public class DonationPayService {
         }
 
         donation.setStatus(DonationStatus.SUCCESS);
+
+        // ✅ 프로젝트 currentAmount 업데이트
+        donation.getProject().increaseCurrentAmount(donation.getAmount());
     }
 
     @Transactional

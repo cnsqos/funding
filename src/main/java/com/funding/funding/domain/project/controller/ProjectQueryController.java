@@ -48,10 +48,8 @@ public class ProjectQueryController {
             @RequestParam(required = false) String sortBy,   // ✅ 인기순 정렬 ("likes")
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return queryService.search(status, categoryId, keyword, tagName, sortBy, pageable)
-                .map(project -> ProjectSummaryResponse.from(project, queryService.getLikeCount(project.getId())));
+        return queryService.search(status, categoryId, keyword, tagName, sortBy, pageable);
     }
-
     /*
       프로젝트 단건 조회
 

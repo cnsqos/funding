@@ -48,7 +48,13 @@ public class ProjectLifecycleService {
     @Transactional
     public void approve(Long projectId, Long adminId) {
         Project project = projectRepository.findById(projectId).orElseThrow();
-        project.changeStatus(ProjectStatus.APPROVED, "ADMIN", adminId);
+
+        // startAt이 이미 지났으면 바로 FUNDING으로
+        if (project.getStartAt() != null && !project.getStartAt().isAfter(LocalDateTime.now())) {
+            project.changeStatus(ProjectStatus.FUNDING, "ADMIN", adminId);
+        } else {
+            project.changeStatus(ProjectStatus.APPROVED, "ADMIN", adminId);
+        }
     }
 
     // 심사 반려: REVIEW_REQUESTED → REJECTED
