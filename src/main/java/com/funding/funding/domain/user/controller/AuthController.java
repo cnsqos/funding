@@ -2,18 +2,20 @@ package com.funding.funding.domain.user.controller;
 
 import com.funding.funding.domain.user.dto.AuthDtos;
 import com.funding.funding.domain.user.service.auth.AuthService;
+import com.funding.funding.global.exception.ApiException;
 import com.funding.funding.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(
         name = "인증",
-        description = "로그인, 회원가입, 이메일 인증, 아이디/비밀번호 찾기, 토큰 재발급, 로그아웃"
+        description = "로그인, 회원가입, 이메일 인증, 아이디/비밀번호 찾기, 토큰 재발급, 로그아웃, 회원 탈퇴"
 )
 @RestController
 @RequestMapping("/api/auth")
@@ -42,11 +44,6 @@ public class AuthController {
     // - AccessToken + RefreshToken 발급
     // - RefreshToken은 응답 body에도 있지만,
     //   보안을 위해 HttpOnly 쿠키에도 함께 저장
-    //
-    // 왜 쿠키로 저장하나?
-    // - RefreshToken은 수명이 길고 민감한 토큰
-    // - 프론트 JS(localStorage, sessionStorage)보다
-    //   HttpOnly 쿠키가 상대적으로 안전함
     // ─────────────────────────────────────────────
     @PostMapping("/login")
     public ApiResponse<AuthDtos.TokenRes> login(HttpServletResponse response,
@@ -56,30 +53,22 @@ public class AuthController {
         // refreshToken을 HttpOnly 쿠키로 저장
         addRefreshTokenCookie(response, tokenRes.refreshToken());
 
-        // accessToken / refreshToken 응답 반환
-        // 추후 운영에서는 refreshToken을 body에서 빼는 방향도 가능
         return ApiResponse.ok(tokenRes);
     }
 
     // ─────────────────────────────────────────────
     // 3) AccessToken 재발급
-    //
-    // refreshToken을 두 가지 방식 중 하나로 받음
-    // 1. 요청 body에서 받기
-    // 2. body에 없으면 쿠키에서 꺼내기
-    //
-    // 이렇게 만든 이유
-    // - Postman 테스트 편의성 확보
-    // - 실제 프론트 운영에서는 쿠키 기반 재발급 가능
+    // - body에 refreshToken이 있으면 우선 사용
+    // - 없으면 쿠키에서 refreshToken 추출
     // ─────────────────────────────────────────────
     @PostMapping("/refresh")
     public ApiResponse<AuthDtos.TokenRes> refresh(@RequestBody(required = false) AuthDtos.RefreshReq req,
                                                   HttpServletRequest request,
                                                   HttpServletResponse response) {
 
-        String refreshToken = null;
+        String refreshToken;
 
-        // body에 refreshToken이 있으면 우선 사용
+        // body 우선
         if (req != null && req.refreshToken() != null && !req.refreshToken().isBlank()) {
             refreshToken = req.refreshToken();
         } else {
@@ -87,11 +76,9 @@ public class AuthController {
             refreshToken = extractRefreshTokenFromCookie(request);
         }
 
-        // RefreshToken 검증 후 새 AccessToken 발급
         AuthDtos.TokenRes tokenRes = authService.refresh(refreshToken);
 
-        // RefreshToken 쿠키를 다시 세팅
-        // (현재는 동일 토큰 재세팅 수준)
+        // refreshToken 쿠키 재세팅
         addRefreshTokenCookie(response, tokenRes.refreshToken());
 
         return ApiResponse.ok(tokenRes);
@@ -100,17 +87,14 @@ public class AuthController {
     // ─────────────────────────────────────────────
     // 4) 로그아웃
     // - Redis에 저장된 refreshToken 삭제
-    // - 브라우저의 refreshToken 쿠키도 삭제
-    //
-    // 주의:
-    // - accessToken은 서버 저장형이 아니라 JWT 자체이므로
-    //   서버에서 직접 "삭제"하는 개념은 없음
-    // - 대신 refreshToken을 끊어서 재발급을 막음
+    // - 브라우저 refreshToken 쿠키도 삭제
     // ─────────────────────────────────────────────
     @PostMapping("/logout")
     public ApiResponse<Void> logout(Authentication authentication,
                                     HttpServletResponse response) {
-        Long userId = (Long) authentication.getPrincipal();
+
+        // 인증 객체에서 안전하게 userId 추출
+        Long userId = extractUserId(authentication);
 
         // 서버 측 refreshToken 제거
         authService.logout(userId);
@@ -122,7 +106,30 @@ public class AuthController {
     }
 
     // ─────────────────────────────────────────────
-    // 5) 이메일 인증 코드 재발송
+    // 5) 회원 탈퇴
+    // - LOCAL 계정: 현재 비밀번호 확인 후 탈퇴
+    // - 소셜 계정: 비밀번호 없이 탈퇴 가능
+    // - 탈퇴 시 refreshToken도 함께 제거
+    // ─────────────────────────────────────────────
+    @PostMapping("/withdraw")
+    public ApiResponse<Void> withdraw(Authentication authentication,
+                                      HttpServletResponse response,
+                                      @Valid @RequestBody AuthDtos.WithdrawReq req) {
+
+        // 인증 객체에서 안전하게 userId 추출
+        Long userId = extractUserId(authentication);
+
+        // 서버 측 탈퇴 처리
+        authService.withdraw(userId, req);
+
+        // 브라우저 refreshToken 쿠키도 삭제
+        deleteRefreshTokenCookie(response);
+
+        return ApiResponse.ok("회원 탈퇴가 완료되었습니다.", null);
+    }
+
+    // ─────────────────────────────────────────────
+    // 6) 이메일 인증 코드 재발송
     // ─────────────────────────────────────────────
     @PostMapping("/email/send")
     public ApiResponse<Void> sendVerification(@Valid @RequestBody AuthDtos.SendVerificationReq req) {
@@ -131,7 +138,7 @@ public class AuthController {
     }
 
     // ─────────────────────────────────────────────
-    // 6) 이메일 인증 코드 확인
+    // 7) 이메일 인증 코드 확인
     // ─────────────────────────────────────────────
     @PostMapping("/email/verify")
     public ApiResponse<Void> verifyEmail(@Valid @RequestBody AuthDtos.VerifyEmailReq req) {
@@ -140,7 +147,7 @@ public class AuthController {
     }
 
     // ─────────────────────────────────────────────
-    // 7) 닉네임으로 이메일(아이디) 찾기
+    // 8) 닉네임으로 이메일(아이디) 찾기
     // ─────────────────────────────────────────────
     @PostMapping("/find-email")
     public ApiResponse<AuthDtos.FindEmailRes> findEmail(@Valid @RequestBody AuthDtos.FindEmailReq req) {
@@ -148,7 +155,7 @@ public class AuthController {
     }
 
     // ─────────────────────────────────────────────
-    // 8) 비밀번호 재설정 링크 이메일 발송
+    // 9) 비밀번호 재설정 링크 이메일 발송
     // ─────────────────────────────────────────────
     @PostMapping("/password/reset-request")
     public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody AuthDtos.PasswordResetRequestReq req) {
@@ -157,7 +164,7 @@ public class AuthController {
     }
 
     // ─────────────────────────────────────────────
-    // 9) 비밀번호 재설정 실행
+    // 10) 비밀번호 재설정 실행
     // ─────────────────────────────────────────────
     @PostMapping("/password/reset")
     public ApiResponse<Void> resetPassword(@Valid @RequestBody AuthDtos.PasswordResetReq req) {
@@ -166,26 +173,24 @@ public class AuthController {
     }
 
     // =========================================================
-    // 아래부터는 refreshToken 쿠키를 다루는 공통 유틸 메서드
+    // 아래부터는 refreshToken 쿠키 공통 유틸
     // =========================================================
 
     // refreshToken을 HttpOnly 쿠키로 저장
     private void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie("refreshToken", refreshToken);
 
-        // JS(document.cookie)로 접근 못 하게 막음
-        // XSS 상황에서 탈취 위험을 줄이는 데 도움
+        // JS(document.cookie)로 접근 불가
         cookie.setHttpOnly(true);
 
-        // 사이트 전체 경로에서 쿠키 사용 가능
+        // 사이트 전체 경로에서 사용
         cookie.setPath("/");
 
-        // 쿠키 수명: 7일
+        // 7일 유지
         cookie.setMaxAge(7 * 24 * 60 * 60);
 
-        // 개발(localhost)에서는 false로 둠
-        // 운영(HTTPS)에서는 반드시 true로 변경해야 함
-        // true면 HTTPS 요청에서만 쿠키 전송
+        // 개발(localhost)에서는 false
+        // 운영(HTTPS)에서는 반드시 true
         cookie.setSecure(false);
 
         response.addCookie(cookie);
@@ -198,16 +203,14 @@ public class AuthController {
         cookie.setHttpOnly(true);
         cookie.setPath("/");
 
-        // maxAge=0 이면 즉시 만료 → 브라우저에서 삭제
+        // 즉시 만료
         cookie.setMaxAge(0);
-
-        // 저장할 때와 같은 secure 설정 흐름 유지
         cookie.setSecure(false);
 
         response.addCookie(cookie);
     }
 
-    // 요청에 포함된 쿠키들 중 refreshToken 값을 찾아 반환
+    // 쿠키에서 refreshToken 추출
     private String extractRefreshTokenFromCookie(HttpServletRequest request) {
         if (request.getCookies() == null) {
             return null;
@@ -220,5 +223,32 @@ public class AuthController {
         }
 
         return null;
+    }
+
+    // Authentication 객체에서 현재 로그인 사용자 ID를 안전하게 추출
+    // - 인증 정보가 없으면 401 반환
+    // - principal 타입이 Long 또는 String인 경우만 허용
+    private Long extractUserId(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        // JwtAuthenticationFilter에서 principal을 Long으로 넣는 경우
+        if (principal instanceof Long userId) {
+            return userId;
+        }
+
+        // 혹시 문자열로 들어오는 경우도 방어
+        if (principal instanceof String str) {
+            try {
+                return Long.valueOf(str);
+            } catch (NumberFormatException e) {
+                throw new ApiException(HttpStatus.UNAUTHORIZED, "인증 정보가 올바르지 않습니다.");
+            }
+        }
+
+        throw new ApiException(HttpStatus.UNAUTHORIZED, "인증 정보가 올바르지 않습니다.");
     }
 }
